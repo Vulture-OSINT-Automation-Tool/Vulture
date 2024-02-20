@@ -9,9 +9,9 @@ import os
 global hunter_key, dehashed_cred_key, dehashed_key
 
 # Place Keys here
-hunter_key = '7b717fa472543170fd923a7c1d3a988ed3d33816' # Hunter.io API Key
-dehashed_cred_key = 'ryanvoit@outlook.com' # Dehashed email
-dehashed_key = 'uuibngiuc0kf9kcwgoc83jgj0ulsdprr' # Dehashed API Key
+hunter_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Hunter.io API Key
+dehashed_cred_key = 'XXXXXXXXXXXXXXXXXXXXXXXXX' # Dehashed email
+dehashed_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Dehashed API Key
 
 
 @click.command()
