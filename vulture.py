@@ -18,10 +18,9 @@ dehashed_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Dehashed API Key
 @click.option('-T', '--target', default=None, help='Specify your target to enumerate domain and credentials.')
 @click.option('-D', '--domain', default=None, help='Specify the domain to enumerate credentials.')
 # @click.option('--dehashed', default=None, help='Specify dehased API to enumerate for breached credentials.')
-# @click.option('--pwned', default=None, help='Specify have i been pwned API to enumerate for breached accounts.')
-# @click.option('--raw/--no-raw', default=False, help="Print the raw JSON information from the API's.")
+@click.option('--raw/--no-raw', default=False, help="Print the raw JSON information from the API's.")
 
-def main(target, domain):
+def main(target, domain, raw):
     if (target and domain):
         print('Error: Target and Domain are exclusive.')
         print('Usage: vulture.py [OPTIONS]')
@@ -29,15 +28,55 @@ def main(target, domain):
         sys.exit()
     elif target:
         print("Target set: " + target)
-        target_dehash(target)
+        target_dehash(target, raw)
     elif domain:
         print("Domain set: " + domain)
-        domain_dehash(domain)
+        domain_dehash(domain, raw)
     else:
         print('Error: No target or domain specified.')
-        print('Usage: Vulture.py [OPTIONS]')
-        print("Try 'Vulture.py --help' for help.")
+        print('Usage: ./vulture.py [OPTIONS]')
+        print("Try './vulture.py --help' for help.")
         sys.exit()
+
+''' later additions
+def main(target, domain, dehashed, pwned)
+    if (dehashed and pwned):
+        print('Error: Dehased and Pwned are excluse to eachother')
+        print('Usage: vulture.py [OPTIONS]')
+        print("Try 'vulture.py --help' for help.")
+        sys.exit()
+    elif (target and domain):
+        print('Error: Target and Domain are exclusive to eachother.')
+        print('Usage: vulture.py [OPTIONS]')
+        print("Try 'vulture.py --help' for help.")
+        sys.exit()
+    elif (target and dehashed):
+        print("Running dehashed against Target...")
+        print("Target set: " + target)
+        target_dehashed(target)
+    elif (target and pwned):
+        print("Running have i been pwned against Target...")
+        print("Target set: " + target)
+        target_pwned(target)
+    elif (domain and dehashed):
+        print("Running deahsed against Domain...")
+        print("Domain set: " + domain)
+        domain_dehashed(domain)
+    elif (domain and pwned):
+        print("Running have i been pwned against Domain...")
+        print("Domain set: " + domain)
+        domain_pwned(domain)
+    elif (target == None and domain == None):
+        print('Error: Either domain or target should be set so there is something to search.')
+        print('Usage: vulture.py [OPTIONS]')
+        print("Try 'vulture.py --help' for help.")
+        sys.exit()
+    elif (dehashed == None and pwned == None):
+        print('Error: Either dehashed or pwned should be set so you can search with one.')
+        print('Usage: vulture.py [OPTIONS]')
+        print("Try 'vulture.py --help' for help.")
+        sys.exit()
+'''
 
 
 #-------------------------------- File IO --------------------------------------#
@@ -58,11 +97,12 @@ def save_file_to_directory(directory_name, file_name, content):
         file_path = os.path.join(dir_path, file_name)
         try:
             with open(file_path, 'w') as file:
-                if "dehash" in file_name:
+                if "raw_json" in file_name:
                     file.write(content)
+                elif "dehash" in file_name:
+                    file.write(dehash_to_plaintext(content))
                 elif "hunter" in file_name:
-                    file.write("we are working on this. Sorry")
-                    #file.write(content)
+                    file.write(hunter_to_plaintext(content))
                 else:
                     print(f"Filename {file_name} incorrect format.")
                 file.close()
@@ -71,11 +111,132 @@ def save_file_to_directory(directory_name, file_name, content):
             print(f"Failed to save the file '{file_name}': {e}")
 
 
+
+#------------------- String and JSON Manipulation Functions --------------------#
+
+#Removes empty JSON values
+def remove_empty_dehashed_values(json_data):
+    response_dict = json.loads(json_data)
+    entries = response_dict.get("entries", [])
+    cleaned_entries = []
+    
+    for item in entries:
+        cleaned_item = {key: value for key, value in item.items() if value is not None and value != ""}
+        cleaned_entries.append(cleaned_item)
+
+    response_dict["entries"] = cleaned_entries
+    return json.dumps(response_dict)
+
+# reformat to json, better viewing
+def format_json_indents(json_data):
+    data_dict = json.loads(json_data)
+    formatted_results = json.dumps(data_dict, indent=4)
+    return formatted_results
+
+# This fixes the weird json string that hunter.io responds with and removes and rogue double quotes that would break the JSON formatting
+def fix_hunter_json_string(json_data_str):
+    result = ""
+    previous_quote = False
+    second_quote = False
+
+    for char in json_data_str:
+        if char == '"' or char == "'":
+            if second_quote:
+                previous_quote = True
+            else:
+                result += char
+                second_quote = True
+        elif previous_quote and second_quote and (char == ',' or char == '}' or char == ":" or char == "]"):
+            result += '"'
+            result += char
+            previous_quote = False
+            second_quote = False
+        else:
+            result += char
+            previous_quote = False
+    #fixed_json_data_str = json_data_str.replace("'", '"').replace(": True", ': "true"').replace(": False", ': "false"').replace(": None", ': ""') #This has a bug lol
+    return result
+
+#Converts Dehashed JSON data strings into a clean plaintext format.
+def dehash_to_plaintext(dehash_data):
+    data = json.loads(dehash_data)
+
+    # Extract balance
+    balance = data["balance"]
+
+    # Extract entries
+    entries = data["entries"]
+
+    # Generate plain text
+    plain_text = f"Balance: {balance}\n\nEntries:\n"
+
+    for idx, entry in enumerate(entries, start=1):
+        plain_text += f"{idx}. ID: {entry['id']}\n"
+        plain_text += f"   Email: \"{entry['email']}\"\n" if entry['email'] else ""
+        plain_text += f"   IP Address: \"{entry['ip_address']}\"\n" if entry['ip_address'] else ""
+        plain_text += f"   Username: \"{entry['username']}\"\n" if entry['username'] else ""
+        plain_text += f"   Password: \"{entry['password']}\"\n" if entry['password'] else ""
+        plain_text += f"   Hashed Password: \"{entry['hashed_password']}\"\n" if entry['hashed_password'] else ""
+        plain_text += f"   Name: \"{entry['name']}\"\n" if entry['name'] else ""
+        plain_text += f"   VIN: \"{entry['vin']}\"\n" if entry['vin'] else ""
+        plain_text += f"   Address: \"{entry['address']}\"\n" if entry['address'] else ""
+        plain_text += f"   Phone: \"{entry['phone']}\"\n" if entry['phone'] else ""
+        plain_text += f"   Database Name: \"{entry['database_name']}\"\n" if entry['database_name'] else ""
+        plain_text += f"\n"
+    return plain_text
+
+#Convert Hunter JSON data strings into a clean plaintext format
+def hunter_to_plaintext(json_data):
+    data = json.loads(json_data)
+
+    formatted_text = f"""
+Company Information:
+---------------------
+Domain: {data['data']['domain']}
+Disposable: {data['data']['disposable']}
+Webmail: {data['data']['webmail']}
+Accept All Emails: {data['data']['accept_all']}
+Pattern: {data['data']['pattern']}
+Organization: {data['data']['organization']}
+Description: {data['data']['description']}
+Twitter: {data['data']['twitter']}
+Facebook: {data['data']['facebook']}
+LinkedIn: {data['data']['linkedin']}
+Instagram: {data['data']['instagram']}
+YouTube: {data['data']['youtube']}
+
+Technologies Used:
+-------------------
+"""
+    formatted_text += "- " + "\n- ".join(data['data']['technologies'])
+    formatted_text += f"""
+
+Location:
+----------
+Country: {data['data']['country']}
+State: {data['data']['state']}
+City: {data['data']['city']}
+Postal Code: {data['data']['postal_code']}
+Street: {data['data']['street']}
+
+Email Contacts:
+----------------
+"""
+    for idx, email in enumerate(data['data']['emails'], 1):
+        sources = "\n     - ".join([f"{source['domain']} (Extracted on {source['extracted_on']}, Still on Page)" for source in email["sources"]])
+        formatted_text += f"{idx}. {email['first_name']} {email['last_name']}\n"
+        formatted_text += f"   - Email: {email['value']}\n"
+        formatted_text += f"   - Confidence: {email['confidence']}%\n"
+        formatted_text += f"   - Sources:\n     - {sources}\n\n"
+    return formatted_text
+
+
+
 #-------------------------------- Target Option -------------------------------#
 
 # Target 
 # Starts with searching for a domain of the company specified with Hunter.io then will move into enumerating for credentials
-def target_dehash(target):
+def target_dehash(target, raw):
     global hunter_key, dehashed_cred_key, dehashed_key
        # Use the 'target' variable in your program logic
 
@@ -89,11 +250,19 @@ def target_dehash(target):
         hunter_results = requests.get(api_url)
         hunter_data = hunter_results.json()
         
-        print(hunter_data)
+        # For debugging purposes
+        # print(hunter_results) # gives reseponse code
+        # print(hunter_data) # gives json api data
+
+        fixed_hunter_data = fix_hunter_json_string(json.dumps(hunter_data))
+        # print(format_json_indents(fixed_hunter_data))
 
         domain = hunter_data['data']['domain']
 
-        save_file_to_directory(company_name, f"hunter.{domain}.txt", hunter_data)
+        save_file_to_directory(company_name, f"hunter.{domain}.txt", fixed_hunter_data)
+
+        if raw == True:
+            save_file_to_directory(target, f"raw_json.hunter.{domain}.txt", json.dumps(hunter_data))
     
         return domain
     
@@ -108,8 +277,15 @@ def target_dehash(target):
             params=params,
             auth=(f'{dehashed_cred_key}', f'{dehashed_key}')).text
 
+        # print(dehashed_json)
+
+        if raw == True:
+            save_file_to_directory(target, f"raw_json.dehash.{domain}.txt", dehashed_json)
         
         return dehashed_json
+
+
+    #----------------- Data Output ------------------#
     
     domain = fetch_company_domain(target)
     if domain:
@@ -124,13 +300,12 @@ def target_dehash(target):
         # For debugging purposes
         # print(results)
     
-            # reformat to json, better viewing
-        data_dict = json.loads(results)
-        formatted_results = json.dumps(data_dict, indent=4)
+        formatted_results = format_json_indents(results) #This was abstracting into its own method since it will be used several times
+        finished_results = remove_empty_dehashed_values(formatted_results)
+    
+        #print(format_json_indents(finished_results))
 
-        print(formatted_results)
-
-        save_file_to_directory(target, f"dehash.{domain}.txt", formatted_results)
+        save_file_to_directory(target, f"dehash.{domain}.txt", results)
     
     
     else:
@@ -142,7 +317,7 @@ def target_dehash(target):
 #--------------------------------- Domain Option -------------------------------#
 
 # This will skip the domain enumeration with Hunter.io and only enumerate for credentials with the domain given
-def domain_dehash(domain):
+def domain_dehash(domain, raw):
     # This is being worked on
     global hunter_key, dehashed_cred_key, dehashed_key
        # Use the 'target' variable in your program logic
@@ -157,10 +332,16 @@ def domain_dehash(domain):
         # For debugging purposes
         #print(hunter_data)
 
-        print(hunter_data)
+        fixed_hunter_data = fix_hunter_json_string(json.dumps(hunter_data))
 
-        save_file_to_directory(domain, f"hunter.{company_domain}.txt", hunter_data)
+        # This doesnt need to be printed but should be sent to a file
+        # print(format_json_indents(fixed_hunter_data))
 
+        save_file_to_directory(domain, f"hunter.{company_domain}.txt", fixed_hunter_data)
+
+        if raw == True:
+            save_file_to_directory(target, f"raw_json.hunter.{domain}.txt", json.dumps(hunter_data))
+    
         return 
     
     # Dehashed API
@@ -174,7 +355,10 @@ def domain_dehash(domain):
             params=params,
             auth=(f'{dehashed_cred_key}', f'{dehashed_key}')).text
 
-        #print(dehashed_json)
+        # print(dehashed_json)
+
+        if raw == True:
+            save_file_to_directory(target, f"raw_json.dehash.{domain}.txt", dehashed_json)
         
         return dehashed_json
 
@@ -184,14 +368,14 @@ def domain_dehash(domain):
     if results:
         # For debugging purposes
         # print(results)
-        
+    
+        formatted_results = format_json_indents(results) #This was abstracting into its own method since it will be used several times
+    
+        finished_results = remove_empty_dehashed_values(formatted_results)
+    
+        #print(format_json_indents(finished_results))
 
-        data_dict = json.loads(results)
-        formatted_results = json.dumps(data_dict, indent=4)
-
-        print(formatted_results)
-
-        save_file_to_directory(domain, f"dehash.{domain}.txt", formatted_results)
+        save_file_to_directory(domain, f"dehash.{domain}.txt", results)
     
     else:
         print("No information found for the domain on dehashed.com.")
