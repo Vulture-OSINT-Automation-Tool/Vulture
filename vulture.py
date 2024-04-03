@@ -156,10 +156,10 @@ def dehash_to_plaintext(dehash_data):
     data = json.loads(dehash_data)
 
     # Extract balance
-    balance = data['balance']
+    balance = data["balance"]
 
     # Extract entries
-    entries = data['entries']
+    entries = data["entries"]
 
     # Generate plain text
     plain_text = f"Balance: {balance}\n\nEntries:\n"
@@ -260,8 +260,10 @@ def domain_dehash(domain, raw):
     def dehashed_information(target_arg):
         global dehashed_cred_key, dehashed_key
         headers = {'Accept': 'application/json'}
-        params = (('query', f'domain:{target_arg}'),)
-        
+        params = {
+        'query': f'domain:{target_arg}',
+        'size': 10000,  # Adjust the size as needed
+        }
         dehashed_json = requests.get('https://api.dehashed.com/search',
             headers=headers,
             params=params,
