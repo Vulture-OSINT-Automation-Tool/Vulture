@@ -16,62 +16,33 @@ dehashed_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Dehashed API Key
 
 @click.command()
 @click.option('-D', '--domain', default=None, help='Specify the domain to enumerate credentials.')
-# @click.option('-d/-no-d', default=False, help='Enumerate dehased API to enumerate for breached credentials.')
-# @click.option('-g/-no-g', default=False, help='Enumerate Google for accessable documents.')
-# @click.option('-l/-no-l', default=False, help='Enumerate LinkedIn to for employees of company.')
+@click.option('-d/-no-d', default=False, help='Enumerate dehased API to enumerate for breached credentials.')
+@click.option('-h/-no-h', default=False, help='Enumerate Hunter.io API to enumerate for organization information.')
+# @click.option('-g/-no-g', default=False, help='Enumerate Google for accessable documents and pages.')
+# @click.option('-w/-no-w', default=False, help='Enumerate WhoIs informatoin of the domain.')
 # @click.option('-p/-no-p', default=False, help='Create password list based on organization.')
 @click.option('--raw/--no-raw', default=False, help="Print the raw JSON information from the API's.")
 
-def main(domain, raw):
+def main(domain, raw, d, h):
     if domain:
         print("Domain set: " + domain)
-        domain_dehash(domain, raw)
+        if (d and h):
+            domain_dehash(domain, raw)
+            domain_hunter(domain, raw)
+        elif (h):
+            domain_hunter(domain, raw)
+        elif (d):
+            domain_dehash(domain, raw)
+        else:
+            print("Error: No gethering method specified.")
+            print('Usage: ./vulture.py -D [DOMAIN] [OPTIONS]')
+            print("Try './vulture.py --help' for help.")
+            sys.exit()
     else:
         print('Error: No domain specified.')
-        print('Usage: ./vulture.py [OPTIONS]')
+        print('Usage: ./vulture.py -D [DOMAIN] [OPTIONS]')
         print("Try './vulture.py --help' for help.")
         sys.exit()
-
-''' later additions
-def main(domain, dehashed, pwned)
-    if (dehashed and pwned):
-        print('Error: Dehased and Pwned are excluse to eachother')
-        print('Usage: vulture.py [OPTIONS]')
-        print("Try 'vulture.py --help' for help.")
-        sys.exit()
-    elif (target and domain):
-        print('Error: Target and Domain are exclusive to eachother.')
-        print('Usage: vulture.py [OPTIONS]')
-        print("Try 'vulture.py --help' for help.")
-        sys.exit()
-    elif (target and dehashed):
-        print("Running dehashed against Target...")
-        print("Target set: " + target)
-        target_dehashed(target)
-    elif (target and pwned):
-        print("Running have i been pwned against Target...")
-        print("Target set: " + target)
-        target_pwned(target)
-    elif (domain and dehashed):
-        print("Running deahsed against Domain...")
-        print("Domain set: " + domain)
-        domain_dehashed(domain)
-    elif (domain and pwned):
-        print("Running have i been pwned against Domain...")
-        print("Domain set: " + domain)
-        domain_pwned(domain)
-    elif (target == None and domain == None):
-        print('Error: Either domain or target should be set so there is something to search.')
-        print('Usage: vulture.py [OPTIONS]')
-        print("Try 'vulture.py --help' for help.")
-        sys.exit()
-    elif (dehashed == None and pwned == None):
-        print('Error: Either dehashed or pwned should be set so you can search with one.')
-        print('Usage: vulture.py [OPTIONS]')
-        print("Try 'vulture.py --help' for help.")
-        sys.exit()
-'''
-
 
 #-------------------------------- File IO --------------------------------------#
 
@@ -225,15 +196,10 @@ Email Contacts:
     return formatted_text
 
 
+#--------------------------------- Hunter Option -------------------------------#
 
-#--------------------------------- Domain Option -------------------------------#
-
-# This will skip the domain enumeration with Hunter.io and only enumerate for credentials with the domain given
-def domain_dehash(domain, raw):
-    # This is being worked on
-    global hunter_key, dehashed_cred_key, dehashed_key
-       # Use the 'target' variable in your program logic
-    
+def domain_hunter(domain, raw):
+    global hunter_key
     # Hunter.io API
     def domain_information(company_domain):
         global hunter_key
@@ -255,6 +221,16 @@ def domain_dehash(domain, raw):
             save_file_to_directory(domain, f"raw_json.hunter.{domain}.txt", json.dumps(hunter_data))
     
         return 
+
+    domain_information(domain)
+
+
+#--------------------------------- Dehash Option -------------------------------#
+
+# This will skip the domain enumeration with Hunter.io and only enumerate for credentials with the domain given
+def domain_dehash(domain, raw):
+    global dehashed_cred_key, dehashed_key
+       # Use the 'target' variable in your program logic
     
     # Dehashed API
     def dehashed_information(target_arg):
@@ -275,8 +251,6 @@ def domain_dehash(domain, raw):
             save_file_to_directory(domain, f"raw_json.dehash.{domain}.txt", dehashed_json)
         
         return dehashed_json
-
-    domain_information(domain)
     
     results = dehashed_information(domain)
     if results:
@@ -295,7 +269,6 @@ def domain_dehash(domain, raw):
         print("No information found for the domain on dehashed.com.")
     
     return
-
 
 
 if __name__ == '__main__':
