@@ -35,12 +35,12 @@ def main(domain, raw, d, h):
             domain_dehash(domain, raw)
         else:
             print("Error: No gethering method specified.")
-            print('Usage: ./vulture.py -D [DOMAIN] [OPTIONS]')
+            print('Usage: ./vulture.py -D <domain> [OPTIONS]')
             print("Try './vulture.py --help' for help.")
             sys.exit()
     else:
         print('Error: No domain specified.')
-        print('Usage: ./vulture.py -D [DOMAIN] [OPTIONS]')
+        print('Usage: ./vulture.py -D <domain> [OPTIONS]')
         print("Try './vulture.py --help' for help.")
         sys.exit()
 
