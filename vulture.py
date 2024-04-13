@@ -4,14 +4,17 @@ import click
 import json
 import sys
 import os
+import validators
+import whois
+from datetime import datetime 
 
-
-global hunter_key, dehashed_cred_key, dehashed_key
+global hunter_key, dehashed_cred_key, dehashed_key, whois_key
 
 # Place Keys here
 hunter_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Hunter.io API Key
 dehashed_cred_key = 'XXXXXXXXXXXXXXXXXXXXXXXXX' # Dehashed email
 dehashed_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Dehashed API Key
+whois_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Whois API Key
 
 
 @click.command()
@@ -19,20 +22,56 @@ dehashed_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Dehashed API Key
 @click.option('-d/-no-d', default=False, help='Enumerate dehased API to enumerate for breached credentials.')
 @click.option('-h/-no-h', default=False, help='Enumerate Hunter.io API to enumerate for organization information.')
 # @click.option('-g/-no-g', default=False, help='Enumerate Google for accessable documents and pages.')
-# @click.option('-w/-no-w', default=False, help='Enumerate WhoIs informatoin of the domain.')
+@click.option('-w/-no-w', default=False, help='Enumerate WhoIs informatoin of the domain.')
 # @click.option('-p/-no-p', default=False, help='Create password list based on organization.')
 @click.option('--raw/--no-raw', default=False, help="Print the raw JSON information from the API's.")
 
-def main(domain, raw, d, h):
+def main(domain, raw, d, h, w):
     if domain:
         print("Domain set: " + domain)
-        if (d and h):
+        if (d and h and w):
+            print("Running Dehashed module...")
             domain_dehash(domain, raw)
+            print("Dehashed module complete.")
+            print("Running whois module...")
+            domain_whois(domain, raw)
+            print("Whois module complete.")
+            print("Running Hunter.io module...")
             domain_hunter(domain, raw)
+            print("Hunter.io module complete.")
+        elif (h and W):
+            print("Running whois module...")
+            domain_whois(domain, raw)
+            print("Whois module complete.")
+            print("Running Hunter.io module...")
+            domain_hunter(domain, raw)
+            print("Hunter.io module complete.")
+        elif (d and w):
+            print("Running Dehashed module...")
+            domain_dehash(domain, raw)
+            print("Dehashed module complete.")
+            print("Running whois module...")
+            domain_whois(domain, raw)
+            print("Whois module complete.")
+        elif (d and h):
+            print("Running Dehashed module...")
+            domain_dehash(domain, raw)
+            print("Dehashed module complete.")
+            print("Running Hunter.io module...")
+            domain_hunter(domain, raw)
+            print("Hunter.io module complete.")
         elif (h):
+            print("Running Hunter.io module...")
             domain_hunter(domain, raw)
+            print("Hunter.io module complete.")
         elif (d):
+            print("Running Dehashed module...")
             domain_dehash(domain, raw)
+            print("Dehashed module complete.")
+        elif (w):
+            print("Running whois module...")
+            domain_whois(domain, raw)
+            print("Whois module complete.")
         else:
             print("Error: No gethering method specified.")
             print('Usage: ./vulture.py -D <domain> [OPTIONS]')
@@ -269,6 +308,97 @@ def domain_dehash(domain, raw):
         print("No information found for the domain on dehashed.com.")
     
     return
+
+def domain_whois(domain, raw):
+    WhoisXML_key = os.getenv('WHOISXML_API_KEY', whois_key)
+
+    def whois_info(target_arg):
+        # Fetch WHOIS information by specified domain
+        if validators.domain(target_arg):
+            try:
+                domain_info = whois.whois(target_arg)
+                return domain_info
+            except Exception as e:
+                return f"Error fetching WHOIS for {target_arg}: {e}"
+        else:
+            return "Invalid domain."
+
+    def fetch_whoisxml_data(api_url, domain, api_key):
+        api_url = f"{api_url}?apiKey={api_key}&domainName={domain}"
+        try:
+            response = requests.get(api_url)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                return f"WHOISXML fetch failed. Status: {response.status_code}"
+        except Exception as e:
+            return f"Error: {e}"
+
+    def serialize_domain_info(domain_info):
+        if isinstance(domain_info, dict):
+            return {key: serialize_domain_info(value) for key, value in domain_info.items()}
+        elif isinstance(domain_info, list):
+            return [serialize_domain_info(item) for item in domain_info]
+        elif isinstance(domain_info, datetime):
+            return domain_info.isoformat()
+        return domain_info
+
+    def save_whois_to_file(domain_info, domain, file_suffix):
+        folder_path = os.path.join(os.getcwd(), domain)
+        os.makedirs(folder_path, exist_ok=True)
+        file_path = os.path.join(folder_path, f"{file_suffix}.{domain}.txt")
+        try:
+            with open(file_path, 'w', encoding='utf-8') as file:
+                if isinstance(domain_info, dict):
+                    for key, value in domain_info.items():
+                        file.write(f"{key}: {value}\n")
+                else:
+                    file.write(str(domain_info))
+            return f"WHOIS information saved to {file_path}."
+        except Exception as e:
+            return f"An error occurred while saving to file: {e}"
+
+
+    def save_raw_whois_to_file(domain_info, domain, file_suffix):
+        folder_path = os.path.join(os.getcwd(), domain)
+        file_path = os.path.join(folder_path, f"{file_suffix}.{domain}.txt")
+        os.makedirs(folder_path, exist_ok=True)
+        try:
+            info_to_save = serialize_domain_info(domain_info)
+            with open(file_path, 'w', encoding='utf-8') as file:
+                json.dump(info_to_save, file, indent=4, ensure_ascii=False)
+            return f"Raw WHOIS information saved to {file_path}."
+        except Exception as e:
+            return f"An error occurred while saving to file: {e}"
+
+
+    result = whois_info(domain)
+    
+    # print(result)
+    if raw == True:
+        if result:
+            file_suffix = "whois_raw"
+            print(save_raw_whois_to_file(result, domain, file_suffix))
+
+    if result:
+        file_suffix = "whois"
+        print(save_whois_to_file(result, domain, file_suffix))
+        domain_reputation = input("Do you want Domain Reputation? (Y/n): ").strip().lower() in {'y', ''}
+        historical_whois = input("Do you want Historical WhoIs amount? (Y/n): ").strip().lower() in {'y', ''}
+
+        if domain_reputation:
+            api_endpoint = "https://domain-reputation.whoisxmlapi.com/api/v1"
+            result = fetch_whoisxml_data(api_endpoint, domain, WhoisXML_key)
+            if result:  # Ensure result is not None or empty before attempting to save.
+                file_suffix = "whois_rep"
+                print(save_whois_to_file(result, domain, file_suffix))
+
+        if historical_whois:
+            api_endpoint = "https://whois-history.whoisxmlapi.com/api/v1"
+            result = fetch_whoisxml_data(api_endpoint, domain, WhoisXML_key)
+            if result:  # Ensure result is not None or empty before attempting to save.
+                file_suffix = "whois_historical"
+                print(save_whois_to_file(result, domain, file_suffix))
 
 
 if __name__ == '__main__':
