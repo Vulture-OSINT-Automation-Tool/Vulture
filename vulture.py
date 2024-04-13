@@ -6,7 +6,12 @@ import sys
 import os
 import validators
 import whois
-from datetime import datetime 
+from datetime import datetime
+import datetime
+import re
+from user_agents import useragentsarray
+import random
+import time
 
 global hunter_key, dehashed_cred_key, dehashed_key, whois_key
 
@@ -21,15 +26,27 @@ whois_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Whois API Key
 @click.option('-D', '--domain', default=None, help='Specify the domain to enumerate credentials.')
 @click.option('-d/-no-d', default=False, help='Enumerate dehased API to enumerate for breached credentials.')
 @click.option('-h/-no-h', default=False, help='Enumerate Hunter.io API to enumerate for organization information.')
-# @click.option('-g/-no-g', default=False, help='Enumerate Google for accessable documents and pages.')
+@click.option('-g/-no-g', default=False, help='Enumerate Google for accessable documents and pages.')
 @click.option('-w/-no-w', default=False, help='Enumerate WhoIs informatoin of the domain.')
-# @click.option('-p/-no-p', default=False, help='Create password list based on organization.')
 @click.option('--raw/--no-raw', default=False, help="Print the raw JSON information from the API's.")
 
-def main(domain, raw, d, h, w):
+def main(domain, raw, d, h, w, g):
     if domain:
         print("Domain set: " + domain)
-        if (d and h and w):
+        if (d and h and w and g):
+            print("Running Dehashed module...")
+            domain_dehash(domain, raw)
+            print("Dehashed module complete.")
+            print("Running Hunter.io module...")
+            domain_hunter(domain, raw)
+            print("Hunter.io module complete.")
+            print("Running whois module...")
+            domain_whois(domain, raw)
+            print("Whois module complete.")
+            print("Running google module...")
+            domain_google(domain, raw)
+            print("Google module complete.")
+        elif (d and h and w):
             print("Running Dehashed module...")
             domain_dehash(domain, raw)
             print("Dehashed module complete.")
@@ -39,6 +56,36 @@ def main(domain, raw, d, h, w):
             print("Running Hunter.io module...")
             domain_hunter(domain, raw)
             print("Hunter.io module complete.")
+        elif (d and h and g):
+            print("Running Dehashed module...")
+            domain_dehash(domain, raw)
+            print("Dehashed module complete.")
+            print("Running Hunter.io module...")
+            domain_hunter(domain, raw)
+            print("Hunter.io module complete.")
+            print("Running google module...")
+            domain_google(domain, raw)
+            print("Google module complete.")
+        elif (d and w and g):
+            print("Running Dehashed module...")
+            domain_dehash(domain, raw)
+            print("Dehashed module complete.")
+            print("Running whois module...")
+            domain_whois(domain, raw)
+            print("Whois module complete.")
+            print("Running google module...")
+            domain_google(domain, raw)
+            print("Google module complete.")
+        elif (h and w and g):
+            print("Running Hunter.io module...")
+            domain_hunter(domain, raw)
+            print("Hunter.io module complete.")
+            print("Running whois module...")
+            domain_whois(domain, raw)
+            print("Whois module complete.")
+            print("Running google module...")
+            domain_google(domain, raw)
+            print("Google module complete.")
         elif (h and W):
             print("Running whois module...")
             domain_whois(domain, raw)
@@ -60,6 +107,27 @@ def main(domain, raw, d, h, w):
             print("Running Hunter.io module...")
             domain_hunter(domain, raw)
             print("Hunter.io module complete.")
+        elif (d and g):
+            print("Running Dehashed module...")
+            domain_dehash(domain, raw)
+            print("Dehashed module complete.")
+            print("Running google module...")
+            domain_google(domain, raw)
+            print("Google module complete.")
+        elif (h and g):
+            print("Running Hunter.io module...")
+            domain_hunter(domain, raw)
+            print("Hunter.io module complete.")
+            print("Running google module...")
+            domain_google(domain, raw)
+            print("Google module complete.")
+        elif (w and g):
+            print("Running whois module...")
+            domain_whois(domain, raw)
+            print("Whois module complete.")
+            print("Running google module...")
+            domain_google(domain, raw)
+            print("Google module complete.")
         elif (h):
             print("Running Hunter.io module...")
             domain_hunter(domain, raw)
@@ -72,6 +140,10 @@ def main(domain, raw, d, h, w):
             print("Running whois module...")
             domain_whois(domain, raw)
             print("Whois module complete.")
+        elif (g):
+            print("Running google module...")
+            domain_google(domain, raw)
+            print("Google module complete.")
         else:
             print("Error: No gethering method specified.")
             print('Usage: ./vulture.py -D <domain> [OPTIONS]')
@@ -399,6 +471,214 @@ def domain_whois(domain, raw):
             if result:  # Ensure result is not None or empty before attempting to save.
                 file_suffix = "whois_historical"
                 print(save_whois_to_file(result, domain, file_suffix))
+
+
+def domain_google(domain, raw):
+    
+
+    escaped_domain = domain.replace('.',r'\.')
+
+    folder = f'{domain}'
+    gsite = f'site:{domain}'
+    
+    # Dork Choice
+    choice1 = input("Do you want to search for File Types? (Y/N)").strip()
+    choice2 = input("Do you want to search for Login Pages? (Y/N)").strip()
+    choice3 = input("Do you want to search for Directory Traversal? (Y/N)").strip()
+    ##choice = input("Choose the array to use:\n1. File Type\n2. Login Pages\n3. Directory Traversal\n4. All\nYour Choice:").strip()
+    subdomain_choice = input("Would you like to search for subdomains? (Y/N)").strip()
+    
+    # Formatting Adjustment
+    url_pattern_sub = rf'(https?://(?:[\w\-\.]*\.)?{escaped_domain}/[^\s&]*(?=(?:&amp;|\s|$)))'
+    url_pattern_basic = rf'https?:\/\/www.{escaped_domain}\/[^\s&]*(?=(?:&amp;|\s|$))'
+    
+    
+    
+    # File Type Dorks
+    ftdoc = 'filetype:doc'
+    ftdot = 'filetype:dot'
+    ftdocm = 'filetype:docm'
+    ftdocx = 'filetype:docx'
+    ftdotx = 'filetype:dotx'
+    ftxls = 'filetype:xls'
+    ftxlsm = 'filetype:xlsm'
+    ftxlsx = 'filetype:xlsx'                        
+    ftppt = 'filetype:ppt'                      
+    ftpptx = 'filetype:pptx'                        
+    ftmdb = 'filetype:mdb'                      
+    ftpdf = 'filetype:pdf'                      
+    ftsql = 'filetype:sql'                      
+    fttxt = 'filetype:txt'                      
+    ftrtf = 'filetype:rtf'                      
+    ftcsv = 'filetype:csv'                      
+    ftxml = 'filetype:xml'                  
+    ftconf = 'filetype:conf'            
+    ftdat = 'filetype:dat'                  
+    ftini = 'filetype:ini'                      
+    ftlog = 'filetype:log'                  
+    ftidrsa = 'index%20of:id_rsa%20id_rsa.pub'          
+    ftpy = 'filetype:py'                        
+    ftphtml = 'filetype:html'                       
+    ftpsh = 'filetype:sh'                       
+    ftpodt = 'filetype:odt'                     
+    ftpkey = 'filetype:key'                     
+    ftpsgn = 'filetype:sign'                        
+    ftpmd = 'filetype:md'                       
+    ftpold= 'filetype:old'                      
+    ftpbin= 'filetype:bin'                      
+    ftcer = 'filetype:cer'                  
+    ftcrt = 'filetype:crt'                      
+    ftpfx = 'filetype:pfx'                      
+    ftcrl = 'filetype:crl'                      
+    ftcrs = 'filetype:crs'                      
+    ftder = 'filetype:der'                      
+    ftappages = 'filetype:pages'                    
+    ftappresent = 'filetype:keynote'                    
+    ftappnumbers = 'filetype:numbers'                   
+    ftodt = 'filetype:odt'                      
+    ftods = 'filetype:ods'                      
+    ftodp = 'filetype:odp'                      
+    ftodg = 'filetype:odg'
+    filetypesarray = [ftdoc, ftdot, ftdocm, ftdocx, ftdotx, ftxls, ftxlsm, ftxlsx, ftppt, ftpptx, ftmdb, ftpdf, ftsql, fttxt, ftrtf, ftcsv, ftxml, ftconf, ftdat, ftini, ftlog, ftidrsa, ftpy, ftphtml, ftpsh, ftpodt, ftpkey, ftpsgn, ftpmd, ftpold, ftpbin, ftcer, ftcrt, ftpfx, ftcrl, ftcrs, ftder, ftappages, ftappresent, ftappnumbers, ftodt, ftods, ftodp, ftodg]
+    
+    
+    # Test Dork
+    lpadmint = 'inurl:admin'
+    lplogint = 'inurl:login'
+    lpautht = 'inurl:auth'
+    testingarray = [lpadmint, lplogint, lpautht]
+    
+    # Login Page Dorks
+    lpadmin = 'inurl:admin'
+    lplogin = 'inurl:login'
+    lpadminlogin = 'inurl:adminlogin'
+    lpcplogin = 'inurl:cplogin'
+    lpweblogin = 'inurl:weblogin'
+    lpquicklogin = 'inurl:quicklogin'
+    lpwp1 = 'inurl:wp-admin'
+    lpwp2 = 'inurl:wp-login'
+    lpportal = 'inurl:portal'
+    lpuserportal = 'inurl:userportal'
+    lploginpanel = 'inurl:loginpanel'
+    lpmemberlogin = 'inurl:memberlogin'
+    lpremote = 'inurl:remote'
+    lpdashboard = 'inurl:dashboard'
+    lpauth = 'inurl:auth'
+    lpexc = 'inurl:exchange'
+    lpfp = 'inurl:ForgotPassword'
+    lptest = 'inurl:test'
+    lpgit = 'inurl:git'
+    lpbkp = 'inurl:backup'
+    loginpagearray = [lpadmin, lplogin, lpadminlogin, lpcplogin, lpweblogin, lpquicklogin, lpwp1, lpwp2, lpportal, lpuserportal, lploginpanel, lpmemberlogin, lpremote, lpdashboard, lpauth, lpexc, lpfp, lptest, lpgit, lpbkp]
+    
+    # Directory Traversal Dorks
+    dtparent = 'intitle:%22index%20of%22%20%22parent%20directory%22'    
+    dtdcim = 'intitle:%22index%20of%22%20%22DCIM%22'            
+    dtftp = 'intitle:%22index%20of%22%20%22ftp%22'  
+    dtbackup = 'intitle:%22index%20of%22%20%22backup%22'        
+    dtmail = 'intitle:%22index%20of%22%20%22mail%22'            
+    dtpassword = 'intitle:%22index%20of%22%20%22password%22'        
+    dtpub = 'intitle:%22index%20of%22%20%22pub%22'          
+    dtgit = 'intitle:%22index%20of%22%20%22.git%22'         
+    dtlog = 'intitle:%22index%20of%22%20%22log%22'          
+    dtconf = 'intitle:%22index%20of%22%20%22src%22'         
+    dtenv = 'intitle:%22index%20of%22%20%22env%22'      
+    dtdenv = 'intitle:%22index%20of%22%20%22.env%22'            
+    dtdsql = 'intitle:%22index%20of%22%20%22.sql%22'        
+    dtapi = 'intitle:%22index%20of%22%20%22api%22'          
+    dtvenv = 'intitle:%22index%20of%22%20%22venv%22'            
+    dtadmin = 'intitle:%22index%20of%22%20%admin%22'
+    directorytravarray = [dtparent, dtdcim, dtftp, dtbackup, dtmail, dtpassword, dtpub, dtgit, dtlog, dtconf, dtenv, dtdenv, dtdsql, dtapi, dtvenv, dtadmin]
+    
+    # User Agent List
+    useragentlength = len(useragentsarray)
+    
+    # Make sure output folder exists
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    
+    # Create output file name
+    filename = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + domain + "_" + "raw" + ".txt"
+    output_path = os.path.join(folder, filename)
+    
+    # Function to get info on the site
+    def query(search_term):
+        results = []
+        for start in range(0, 50, 10):
+            index = random.randint(0, len(useragentsarray) - 1)
+            randomuseragent = useragentsarray[index]
+            headers = {"User-Agent": randomuseragent}   
+            try:
+                response = requests.get(
+                    f"https://www.google.com/search?q={gsite}+{search_term}&start={start}",
+                    headers=headers,
+                    timeout=10,
+                )
+                if "sorry/index" in response.url:
+                    print("Google caught you lackin. Change your IP or wait for cooldown.")
+                    sys.exit()
+    
+                # Functionality to pull URL patterns from raw response.
+                if subdomain_choice == "y" or subdomain_choice == "Y":
+                    #urls = url_pattern.findall(response.text)
+                    urls_sub = re.findall(url_pattern_sub, response.text)
+                    results.extend(urls_sub)
+                    print(f"Found result for: {search_term}")
+                if subdomain_choice == "n" or subdomain_choice == "N":
+                    urls = re.findall(url_pattern_basic, response.text)
+                    results.extend(urls)
+                    print(f"Found result for: {search_term}")
+    
+                # Raw Data Dump For Testing. Remove commenting for raw dump.
+            
+                #print("URL Requested:", response.url)
+                #print("Status Code:", response.status_code)
+                #print("Response Headers:", response.headers)
+                #print("Response Body:\n", response.text)
+    
+    
+                random_sleep = random.randint(8, 15)
+                time.sleep(random_sleep)
+    
+            except requests.RequestException as e:
+                print(f"Request failed: {e}")
+        return results
+    
+    # Print the results
+    def print_the_results(search_array):
+        for item in search_array:
+            results = query(item)
+            if results:
+                with open(output_path, "a") as f:
+                    for result in results:
+                        f.write(result + "\n")
+            else:
+                print("No results found for", item)
+    
+    # Execution
+    if choice1 == "y" or choice1 == "Y":
+        print(f"Checking File Types: {domain}")
+        print_the_results(filetypesarray)
+    if choice2 == "y" or choice2 == "Y":
+        print(f"Checking Login Page: {domain}")
+        print_the_results(loginpagearray)
+    if choice3 == "y" or choice3 == "Y":
+        print(f"Checking Directory Traversal: {domain}")
+        print_the_results(directorytravarray)
+    #elif choice == "4":
+    #   print(f"Checking File Types: {domain}")
+    #   print_the_results(filetypesarray)
+    #   print(f"Checking Login Page: {domain}")
+    #   print_the_results(loginpagearray)
+    #   print(f"Checking Directory Traversal: {domain}")
+    #   print_the_results(directorytravarray)
+    
+    elif choice1 == "Baconator":
+        print(f"Checking Testing Dork: {domain}")
+        print_the_results(testingarray)
+    
+
+
 
 
 if __name__ == '__main__':
