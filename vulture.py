@@ -75,12 +75,12 @@ def main(domain, raw, d, h, w):
         else:
             print("Error: No gethering method specified.")
             print('Usage: ./vulture.py -D <domain> [OPTIONS]')
-            print("Try './vulture.py --help' for help.")
+            print("Try ./vulture.py --help for help.")
             sys.exit()
     else:
         print('Error: No domain specified.')
         print('Usage: ./vulture.py -D <domain> [OPTIONS]')
-        print("Try './vulture.py --help' for help.")
+        print("Try ./vulture.py --help for help.")
         sys.exit()
 
 #-------------------------------- File IO --------------------------------------#
