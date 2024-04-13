@@ -23,6 +23,9 @@ This module requires an account with [Dehashed](dehashed.com). This account will
 ### Google Dorking `-g`
 
 ### Whois `-w`
+The whois module is ran by addint the `-w` switch. This module will gather information on the domain and its registration. This option will also ask if you are interested in querying the reputation of the domain which will check to see if theres known issues with the domain. It will then ask if you want to check how much domain registration history there is. 
+
+This module requires you to install the requirements.txt and an account with [whoismxlapi](www.whoisxmlapi.com). Get your whois API key and imput it into the whois variable in Vulture at the top. 
 
 ### Hunter.io `-h`
 The Hunter.io module will run with the `-h` option. It will make a request to the Hunter.io API to gather information including company information, email format, social medias, and potential technologies used. 
@@ -30,3 +33,4 @@ The Hunter.io module will run with the `-h` option. It will make a request to th
 This module requires an account with [Hunter.io](hunter.io). Create an API key for your account and input it into the Hunter.io API key variable in Vulture. 
 
 ### PassForge.py
+PassForage is a scipt that allows the user to create a list of words that could potentially be passwords for the user to password spray and identify any weak credentials. 
