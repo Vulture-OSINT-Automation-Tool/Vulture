@@ -86,7 +86,7 @@ def main(domain, raw, d, h, w, g):
             print("Running google module...")
             domain_google(domain, raw)
             print("Google module complete.")
-        elif (h and W):
+        elif (h and w):
             print("Running whois module...")
             domain_whois(domain, raw)
             print("Whois module complete.")
