@@ -239,7 +239,6 @@ def saveLists(wordList, passwordList):
 
 def passForgeManualMenu():
     
-    # Adds a check mark to show what user has already added to wordlist
     visited = {
         '1': False,
         '2': False,
@@ -328,30 +327,40 @@ def passForgeManualMenu():
             input("Press Enter to continue...")
 
 def passForgeAutomaticMode():
+     # Initialize password list
+    autoPasswordList = []
+
     clearScreen()
     print("      Welcome to Auto PassForge")
     print("  Your Automatic Password Generator")
     print("-------------------------------------")
 
-    # Ask user for the text file
-    hunterFile = input("Please enter the name/path of the *hunter.io* file:")
+    # Ask user for the text file and import Hunter Information
+    print("Would you like to import Vulture - Hunter.io information? (Y/n)")
+    outputChoice = input().strip().lower()
+    if outputChoice == 'y':
+        hunterFile = input("Please enter the name/path of the *hunter.io* file:")
+        importHunterFile(autoPasswordList, hunterFile)
     
-    # Initialize password list
-    autoPasswordList = []
+   
     
     # Add seasons and months
     generatePreMadePasswordList(autoPasswordList)
-
-    # Import Hunter Information
-    importHunterFile(autoPasswordList, hunterFile)
     
     # Add common passwords
     addCommonPasswords(autoPasswordList)   
         
     # Write password list to a file
-    writeListToFile(autoPasswordList, f"{hunterFile}_PassForgeAutoList")
-    print(f"Password list has been saved to {hunterFile}")
-    input("Press Enter to Exit......")
+    if outputChoice == 'y':
+        writeListToFile(autoPasswordList, f"{hunterFile}_PassForgeAutoList")
+        print(f"Password list has been saved to {hunterFile}_PassForgeAutoList")
+        input("Press Enter to Exit......")
+    else: 
+        writeListToFile(autoPasswordList, "PassForgeAutoList")
+        print(f"Password list has been saved to PassForgeAutoList")
+        input("Press Enter to Exit......")
+    
+    
 
 def mainMenuGUI():
     while True:
