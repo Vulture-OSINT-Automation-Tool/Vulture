@@ -36,4 +36,4 @@ The Hunter.io module will run with the `-h` option. It will make a request to th
 This module requires an account with [Hunter.io](hunter.io). Create an API key for your account and input it into the Hunter.io API key variable in Vulture. 
 
 ### PassForge.py
-PassForage is a scipt that allows the user to create a list of words that could potentially be passwords for the user to password spray and identify any weak credentials. 
+PassForage is a scipt that allows the user to create a list of words that could potentially be used to password spray and identify any weak credentials. 
