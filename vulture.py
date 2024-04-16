@@ -14,8 +14,8 @@ import random
 import time
 import api_keys
 
-#if os.name != "posix":
-#    exit("This tool is currently only supported on Linux.")
+if os.name != "posix":
+    exit("This tool is currently only supported on Linux.")
 
 global hunter_key, dehashed_cred_key, dehashed_key, whois_key
 
@@ -548,9 +548,9 @@ def domain_google(domain, raw):
     
     # Test Dork
     lpadmint = 'inurl:admin'
-    #lplogint = 'inurl:login'
-    #lpautht = 'inurl:auth'
-    testingarray = [lpadmint]
+    lplogint = 'inurl:login'
+    lpautht = 'inurl:auth'
+    testingarray = [lpadmint, lplogint, lpautht]
     
     # Login Page Dorks
     lpadmin = 'inurl:admin'
