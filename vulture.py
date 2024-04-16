@@ -607,6 +607,7 @@ def domain_google(domain, raw):
     
     # Function to get info on the site
     def query(search_term):
+        query_progress(0, 50, f"Searching for {search_term}")
         results = []
         for start in range(0, 50, 10):
             index = random.randint(0, len(useragentsarray) - 1)
@@ -623,15 +624,15 @@ def domain_google(domain, raw):
                     sys.exit()
     
                 # Functionality to pull URL patterns from raw response.
-                if subdomain_choice == "y" or subdomain_choice == "Y":
+                if subdomain_choice.lower() == "y":
                     #urls = url_pattern.findall(response.text)
                     urls_sub = re.findall(url_pattern_sub, response.text)
                     results.extend(urls_sub)
-                    print(f"Found result for: {search_term}")
-                if subdomain_choice == "n" or subdomain_choice == "N":
+                    #print(f"Found result for: {search_term}")
+                elif subdomain_choice.lower() == "n":
                     urls = re.findall(url_pattern_basic, response.text)
                     results.extend(urls)
-                    print(f"Found result for: {search_term}")
+                    #print(f"Found result for: {search_term}")
     
                 # Raw Data Dump For Testing. Remove commenting for raw dump.
             
@@ -646,12 +647,21 @@ def domain_google(domain, raw):
     
             except requests.RequestException as e:
                 print(f"Request failed: {e}")
+
+            query_progress(start + 10, 50, f"Searching for {search_term}")
         return results
     
+    # Show query progress
+    def query_progress(progress, total, message):
+        percent = 100 * (progress / float(total))
+        bar = '█' * int(percent) + '-' * (100 - int(percent))
+        print(f"\r{message} |{bar}| {percent:.2f}%", end="\r")
+
     # Print the results
     def print_the_results(search_array):
         for item in search_array:
             results = query(item)
+            print() # Blank line
             if results:
                 with open(output_path, "a") as f:
                     for result in results:
