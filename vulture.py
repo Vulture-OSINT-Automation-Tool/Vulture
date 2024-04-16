@@ -12,18 +12,14 @@ import re
 from user_agents import useragentsarray
 import random
 import time
-import api_keys
-
-if os.name != "posix":
-    exit("This tool is currently only supported on Linux.")
 
 global hunter_key, dehashed_cred_key, dehashed_key, whois_key
 
 # Place Keys here
-hunter_key = api_keys.hunter_key # Hunter.io API Key
-dehashed_cred_key = api_keys.dehashed_cred_key # Dehashed email
-dehashed_key = api_keys.dehashed_key # Dehashed API Key
-whois_key = api_keys.whois_key # Whois API Key
+hunter_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Hunter.io API Key
+dehashed_cred_key = 'XXXXXXXXXXXXXXXXXXXXXXXXX' # Dehashed email
+dehashed_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Dehashed API Key
+whois_key = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' # Whois API Key
 
 
 @click.command()
