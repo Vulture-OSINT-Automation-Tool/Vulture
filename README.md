@@ -3,6 +3,8 @@ OSINT Automation Tool
 
 Vulture is built to help automate the task of locating different Open-Source Intellegence information on the internet and displaying it back to the user. Our vision is to empower individuals, particularly pentesters, with a versatile and user-friendly platform that simplifies the collection, analysis, and utilization of open-source information. 
 
+This tool focuses on gathering this information from a <ins>**passive perspective**</ins> not touching the targets technologies in the hope to remain stealthy and to not have the possibility of touching an out-of-scope technology in a penetration test. 
+
 ## Usage
 Install requirements
 ```
