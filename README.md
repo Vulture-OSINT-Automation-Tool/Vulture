@@ -6,12 +6,16 @@ Vulture is built to help automate the task of locating different Open-Source Int
 This tool focuses on gathering this information from a <ins>**passive perspective**</ins> not touching the targets technologies in the hope to remain stealthy and to not have the possibility of touching an out-of-scope technology in a penetration test. 
 
 ## Usage
-Install requirements
+### Install requirements
 ```
 pip install -r requirements.txt
 ```
 
-Running the application
+### Input API keys into `api_keys.py`
+
+Links for API keys are mentioned below; you do not have to fill out the whole file, only the keys you plan on using. 
+
+### Running the application
 ```
 python3 vulture.py -D <domain> [OPTIONS]
 ```
@@ -37,5 +41,10 @@ The Hunter.io module will run with the `-h` option. It will make a request to th
 
 This module requires an account with [Hunter.io](hunter.io). Create an API key for your account and input it into the Hunter.io API key variable in `api_keys.py`.
 
+
+## Scripts
 ### PassForge.py
 PassForage is a scipt that allows the user to create a list of words that could potentially be used to password spray and identify any weak credentials. 
+
+### Credharvest.py
+This script will take the input of the dehash result file from Vulture and grab the emails and passwords, remove duplicates, sort them, and display them in a format that is easy for the user to view credentials from the file. This will output to a file called `credentials.txt` for the user to view later when needed. 
