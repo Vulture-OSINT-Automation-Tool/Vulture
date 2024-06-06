@@ -41,7 +41,7 @@ This module requires you to install the requirements.txt and an account with [wh
 ### Hunter.io `-h`
 The Hunter.io module will run with the `-h` option. It will make a request to the Hunter.io API to gather information including company information, email format, social medias, and potential technologies used. 
 
-This module requires an account with [Hunter.io](hunter.io). Create an API key for your account and input it into the Hunter.io API key variable in `api_keys.py`.
+This module requires an account with [Hunter.io](https://hunter.io). Create an API key for your account and input it into the Hunter.io API key variable in `api_keys.py`.
 
 
 ## Scripts
